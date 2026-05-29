@@ -1,14 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Provider } from 'react-redux';
-import store from './src/redux/store';
-import * as Font from 'expo-font';
-import { StatusBar } from 'expo-status-bar';
 import MaterialCommunityIcons from '@react-native-vector-icons/material-community';
 
-// Import Screens
+// Screens
 import SplashScreen from './src/screens/SplashScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import RegisterScreen from './src/screens/auth/RegisterScreen';
@@ -21,94 +17,180 @@ import MyLoansScreen from './src/screens/loans/MyLoansScreen';
 import LoanStatusScreen from './src/screens/loans/LoanStatusScreen';
 import StatementsScreen from './src/screens/statements/StatementsScreen';
 import TransactionHistoryScreen from './src/screens/statements/TransactionHistoryScreen';
+import PaymentScreen from './src/screens/payment/PaymentScreen';
 import ProfileScreen from './src/screens/profile/ProfileScreen';
 import SettingsScreen from './src/screens/profile/SettingsScreen';
-import PaymentScreen from './src/screens/payment/PaymentScreen';
 import PromoCodeScreen from './src/screens/promo/PromoCodeScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const DashboardNavigator = () => {
+// Auth Stack
+const AuthStack = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animationEnabled: true,
+      }}
+    >
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen name="OTP" component={OTPScreen} />
+    </Stack.Navigator>
+  );
+};
+
+// Dashboard Stack
+const DashboardStack = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animationEnabled: true,
+      }}
+    >
+      <Stack.Screen name="DashboardHome" component={DashboardScreen} />
+      <Stack.Screen name="LoanSelection" component={LoanSelectionScreen} />
+      <Stack.Screen name="LoanDetails" component={LoanDetailsScreen} />
+      <Stack.Screen name="LoanApplication" component={LoanApplicationScreen} />
+      <Stack.Screen name="LoanStatus" component={LoanStatusScreen} />
+      <Stack.Screen name="Payment" component={PaymentScreen} />
+      <Stack.Screen name="PromoCode" component={PromoCodeScreen} />
+      <Stack.Screen name="Statements" component={StatementsScreen} />
+      <Stack.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
+    </Stack.Navigator>
+  );
+};
+
+// Loans Stack
+const LoansStack = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animationEnabled: true,
+      }}
+    >
+      <Stack.Screen name="MyLoansHome" component={MyLoansScreen} />
+      <Stack.Screen name="LoanStatus" component={LoanStatusScreen} />
+      <Stack.Screen name="Payment" component={PaymentScreen} />
+    </Stack.Navigator>
+  );
+};
+
+// Profile Stack
+const ProfileStack = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animationEnabled: true,
+      }}
+    >
+      <Stack.Screen name="ProfileHome" component={ProfileScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+    </Stack.Navigator>
+  );
+};
+
+// Main App Bottom Tab Navigator
+const MainAppTabs = () => {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ color, size }) => {
-          let iconName;
-          if (route.name === 'Dashboard') iconName = 'home';
-          else if (route.name === 'Loans') iconName = 'credit-card';
-          else if (route.name === 'Statements') iconName = 'file-document';
-          else if (route.name === 'Profile') iconName = 'account';
-          return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
-        },
+      screenOptions={{
+        headerShown: false,
         tabBarActiveTintColor: '#2E7D32',
-        tabBarInactiveTintColor: '#999999',
-        headerShown: true,
-      })}
+        tabBarInactiveTintColor: '#999',
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopColor: '#E0E0E0',
+          borderTopWidth: 1,
+          paddingBottom: 5,
+          paddingTop: 5,
+        },
+      }}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Home' }} />
-      <Tab.Screen name="Loans" component={MyLoansScreen} options={{ title: 'My Loans' }} />
-      <Tab.Screen name="Statements" component={StatementsScreen} options={{ title: 'Statements' }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Account' }} />
+      <Tab.Screen
+        name="Dashboard"
+        component={DashboardStack}
+        options={{
+          tabBarLabel: 'Home',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="home" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Loans"
+        component={LoansStack}
+        options={{
+          tabBarLabel: 'My Loans',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="credit-card" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Transactions"
+        component={StatementsScreen}
+        options={{
+          tabBarLabel: 'Transactions',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="swap-horizontal" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileStack}
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="account" color={color} size={size} />
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 };
 
-export default function App() {
-  const [isReady, setIsReady] = React.useState(false);
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-  const [splash, setSplash] = React.useState(true);
+// Root Navigator
+const App = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [userToken, setUserToken] = useState(null);
 
   useEffect(() => {
-    const loadFonts = async () => {
+    // Simulate splash screen timeout
+    const bootstrapAsync = async () => {
       try {
-        await Font.loadAsync({
-          MaterialCommunityIcons: require('@react-native-vector-icons/material-community').default,
-        });
-        setIsReady(true);
-        setTimeout(() => setSplash(false), 2000);
-      } catch (error) {
-        console.log('Font loading error:', error);
+        // Fetch user token from storage
+        // await AsyncStorage.getItem('userToken');
+        setUserToken(null); // For now, set to null to show auth screens
+      } catch (e) {
+        console.error('Failed to restore token:', e);
       }
+      setIsLoading(false);
     };
-    loadFonts();
+
+    bootstrapAsync();
   }, []);
 
-  if (!isReady || splash) {
+  if (isLoading) {
     return <SplashScreen />;
   }
 
   return (
-    <Provider store={store}>
-      <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{
-            headerShown: false,
-            cardStyle: { backgroundColor: '#FFFFFF' },
-          }}
-        >
-          {!isLoggedIn ? (
-            <Stack.Group screenOptions={{ animationEnabled: false }}>
-              <Stack.Screen name="Login" component={LoginScreen} />
-              <Stack.Screen name="Register" component={RegisterScreen} />
-              <Stack.Screen name="OTP" component={OTPScreen} />
-            </Stack.Group>
-          ) : (
-            <Stack.Group>
-              <Stack.Screen name="MainApp" component={DashboardNavigator} />
-              <Stack.Screen name="LoanSelection" component={LoanSelectionScreen} />
-              <Stack.Screen name="LoanDetails" component={LoanDetailsScreen} />
-              <Stack.Screen name="LoanApplication" component={LoanApplicationScreen} />
-              <Stack.Screen name="LoanStatus" component={LoanStatusScreen} />
-              <Stack.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
-              <Stack.Screen name="Payment" component={PaymentScreen} />
-              <Stack.Screen name="PromoCode" component={PromoCodeScreen} />
-              <Stack.Screen name="Settings" component={SettingsScreen} />
-            </Stack.Group>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-      <StatusBar barStyle="dark-content" />
-    </Provider>
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {userToken == null ? (
+          <Stack.Screen name="Auth" component={AuthStack} />
+        ) : (
+          <Stack.Screen name="MainApp" component={MainAppTabs} />
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
-}
+};
+
+export default App;
